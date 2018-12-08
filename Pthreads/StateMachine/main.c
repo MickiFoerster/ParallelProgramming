@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <pthread.h>
+#include <assert.h>
 
 void stateMachine(void);
 
@@ -18,12 +20,49 @@ void fatal(const char errormsg[]) {
   exit(1);
 }
 
-void* task(void *argv) {
+bool checkTransitionUnconnectedConnecting(void) {
+  return true;
+}
+
+bool checkTransitionConnectingConnected(void) {
+  return true;
+}
+
+void* statemachineTask(void *argv) {
+  typedef enum {
+    undefined = 0,
+    unconnected = 0x100,
+    connecting,
+    connected,
+  } state_t;
+
+  state_t currentState = unconnected; 
+  for(;;) {
+    switch( currentState ) {
+      case undefined:
+        assert(0);
+      case unconnected:
+        if ( checkTransitionUnconnectedConnecting() )
+          currentState = connecting;
+        break;
+      case connecting:
+        if ( checkTransitionConnectingConnected() )
+          currentState = connected;
+        else
+          currentState = unconnected;
+        break;
+      case connected:
+        printf("connected");
+        goto end;
+        break;
+    }
+  }
+end:
   return NULL;
 }
 
 void stateMachine(void) {
-  int rc = pthread_create(&tid, NULL, task, NULL);
+  int rc = pthread_create(&tid, NULL, statemachineTask, NULL);
   if ( rc ) 
     fatal("pthread_create failed");
   rc = pthread_detach(tid);
