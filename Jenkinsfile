@@ -9,10 +9,18 @@ pipeline {
     stage('Build') {
       steps {
         echo "Building..."
+      }
+      steps {
         hostname
-        git --version
-        gcc --version
-        g++ --version
+      }
+      steps {
+        /usr/bin/git --version
+      }
+      steps {
+        /usr/bin/gcc --version
+      }
+      steps {
+        /usr/bin/g++ --version
       }
     }
     stage('Deploy') {
