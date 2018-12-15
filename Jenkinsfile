@@ -8,20 +8,80 @@ pipeline {
     }
     stage('Build') {
       parallel {
-        steps {
-          echo "Building..."
+        stage('echoing') {
+          steps {
+            echo "Building..."
+          }
+          post {
+            always {
+              success {
+                echo "Great work"
+              }
+              failure {
+                echo "Better luck next time"
+              }
+            }
+          }
         }
-        steps {
-          sh 'hostname'
+        stage('what hostname do you have?') {
+          steps {
+            sh 'hostname'
+          }
+          post {
+            always {
+              success {
+                echo "Great work"
+              }
+              failure {
+                echo "Better luck next time"
+              }
+            }
+          }
         }
-        steps {
-          sh '/usr/bin/git --version'
+        stage('git version') {
+          steps {
+            sh '/usr/bin/git --version'
+          }
+          post {
+            always {
+              success {
+                echo "Great work"
+              }
+              failure {
+                echo "Better luck next time"
+              }
+            }
+          }
         }
-        steps {
-          sh '/usr/bin/gcc --version'
+        stage('gcc version') {
+          steps {
+            sh 'gcc --version'
+          }
+          post {
+            always {
+              success {
+                echo "Great work"
+              }
+              failure {
+                echo "Better luck next time"
+              }
+            }
+          }
         }
-        steps {
-          sh '/usr/bin/g++ --version'
+        stage('g++ version') {
+          steps {
+            sh 'g++ --version'
+          }
+          post {
+            always {
+              success {
+                echo "Great work"
+              }
+              failure {
+                echo "Better luck next time"
+              }
+            }
+          }
         }
       }
     }
