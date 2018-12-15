@@ -67,32 +67,16 @@ void endStatemachine(void) {
   }
 }
 
-typedef enum {
-  disconnected = 0x100,
-  connecting,
-  open,
-  closing,
-  closed,
-} state_t;
-state_t currentState = disconnected;
-pthread_mutex_t mtxCurrentState = PTHREAD_MUTEX_INITIALIZER;
-
 /***************** Transition disconnected -> connecting *********************/
 pthread_cond_t condDisconnectedConnecting = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mtxDisconnectedConnecting = PTHREAD_MUTEX_INITIALIZER;
 bool transitionDisconnectedConnecting = false;
 
 void setTransitionDisconnectedConnecting(void) {
-  pthread_mutex_lock(&mtxCurrentState);
-  if ( currentState == disconnected ) {
-    pthread_mutex_unlock(&mtxCurrentState);
-    pthread_mutex_lock(&mtxDisconnectedConnecting);
-    transitionDisconnectedConnecting = true;
-    pthread_mutex_unlock(&mtxDisconnectedConnecting);
-    pthread_cond_signal(&condDisconnectedConnecting);
-  } else {
-    pthread_mutex_unlock(&mtxCurrentState);
-  }
+  pthread_mutex_lock(&mtxDisconnectedConnecting);
+  transitionDisconnectedConnecting = true;
+  pthread_mutex_unlock(&mtxDisconnectedConnecting);
+  pthread_cond_signal(&condDisconnectedConnecting);
 }
 
 bool checkTransitionDisconnectedConnecting(void) {
@@ -112,16 +96,10 @@ pthread_mutex_t mtxConnectingOpen = PTHREAD_MUTEX_INITIALIZER;
 short transitionConnectingOpen = 0;
 
 void setTransitionConnectingOpen(short val) {
-  pthread_mutex_lock(&mtxCurrentState);
-  if ( currentState == connecting ) {
-    pthread_mutex_unlock(&mtxCurrentState);
-    pthread_mutex_lock(&mtxConnectingOpen);
-    transitionConnectingOpen = val;
-    pthread_mutex_unlock(&mtxConnectingOpen);
-    pthread_cond_signal(&condConnectingOpen);
-  } else {
-    pthread_mutex_unlock(&mtxCurrentState);
-  }
+  pthread_mutex_lock(&mtxConnectingOpen);
+  transitionConnectingOpen = val;
+  pthread_mutex_unlock(&mtxConnectingOpen);
+  pthread_cond_signal(&condConnectingOpen);
 }
 
 bool checkTransitionConnectingOpen(void) {
@@ -143,16 +121,10 @@ pthread_mutex_t mtxOpenClosing = PTHREAD_MUTEX_INITIALIZER;
 bool transitionOpenClosing = false;
 
 void setTransitionOpenClosing(void) {
-  pthread_mutex_lock(&mtxCurrentState);
-  if ( currentState == open ) {
-    pthread_mutex_unlock(&mtxCurrentState);
-    pthread_mutex_lock(&mtxOpenClosing);
-    transitionOpenClosing = true;
-    pthread_mutex_unlock(&mtxOpenClosing);
-    pthread_cond_signal(&condOpenClosing);
-  } else {
-    pthread_mutex_unlock(&mtxCurrentState);
-  }
+  pthread_mutex_lock(&mtxOpenClosing);
+  transitionOpenClosing = true;
+  pthread_mutex_unlock(&mtxOpenClosing);
+  pthread_cond_signal(&condOpenClosing);
 }
 
 bool checkTransitionOpenClosing(void) {
@@ -171,16 +143,10 @@ pthread_mutex_t mtxClosingClosed = PTHREAD_MUTEX_INITIALIZER;
 bool transitionClosingClosed = false;
 
 void setTransitionClosingClosed(void) {
-  pthread_mutex_lock(&mtxCurrentState);
-  if ( currentState == closing ) {
-    pthread_mutex_unlock(&mtxCurrentState);
-    pthread_mutex_lock(&mtxClosingClosed);
-    transitionClosingClosed = true;
-    pthread_mutex_unlock(&mtxClosingClosed);
-    pthread_cond_signal(&condClosingClosed);
-  } else {
-    pthread_mutex_unlock(&mtxCurrentState);
-  }
+  pthread_mutex_lock(&mtxClosingClosed);
+  transitionClosingClosed = true;
+  pthread_mutex_unlock(&mtxClosingClosed);
+  pthread_cond_signal(&condClosingClosed);
 }
 
 bool checkTransitionClosingClosed(void) {
@@ -193,50 +159,44 @@ bool checkTransitionClosingClosed(void) {
 }
 /*****************************************************************************/
 
+
 void *statemachineTask(void *argv) {
+  typedef enum {
+    disconnected = 0x100,
+    connecting,
+    open,
+    closing,
+    closed,
+  } state_t;
+
+  state_t currentState = disconnected;
   for (;;) {
-    pthread_mutex_lock(&mtxCurrentState);
     switch (currentState) {
     case disconnected:
-      pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "disconnected\n");
       checkTransitionDisconnectedConnecting();
-      pthread_mutex_lock(&mtxCurrentState);
       currentState = connecting;
-      pthread_mutex_unlock(&mtxCurrentState);
       break;
     case connecting:
-      pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "connecting\n");
-      pthread_mutex_lock(&mtxCurrentState);
       if (checkTransitionConnectingOpen())
         currentState = open;
       else
         currentState = closed;
-      pthread_mutex_unlock(&mtxCurrentState);
       break;
     case open:
-      pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "open\n");
       checkTransitionOpenClosing();
-      pthread_mutex_lock(&mtxCurrentState);
       currentState = closing;
-      pthread_mutex_unlock(&mtxCurrentState);
       break;
     case closing:
-      pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "closing\n");
       checkTransitionClosingClosed();
-      pthread_mutex_lock(&mtxCurrentState);
       currentState = closed;
-      pthread_mutex_unlock(&mtxCurrentState);
       break;
     case closed:
-      pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "closed\n");
-      pthread_mutex_lock(&mtxCurrentState);
       currentState = disconnected;
-      pthread_mutex_unlock(&mtxCurrentState);
     }
   }
   return NULL;
