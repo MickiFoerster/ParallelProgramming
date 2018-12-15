@@ -7,12 +7,22 @@ pipeline {
       }
     }
     stage('Build') {
-      steps {
-        echo "Building..."
-        sh 'hostname'
-        sh '/usr/bin/git --version'
-        sh '/usr/bin/gcc --version'
-        sh '/usr/bin/g++ --version'
+      parallel {
+        steps {
+          echo "Building..."
+        }
+        steps {
+          sh 'hostname'
+        }
+        steps {
+          sh '/usr/bin/git --version'
+        }
+        steps {
+          sh '/usr/bin/gcc --version'
+        }
+        steps {
+          sh '/usr/bin/g++ --version'
+        }
       }
     }
     stage('Deploy') {
