@@ -9,6 +9,10 @@ pipeline {
     stage('Build') {
       steps {
         echo "Building..."
+        hostname
+        git --version
+        gcc --version
+        g++ --version
       }
     }
     stage('Deploy') {
