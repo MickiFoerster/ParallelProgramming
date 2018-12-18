@@ -13,18 +13,6 @@
  *                      V                    V
  *                    closed  <----------- closing
  */
-
-#if 0
-#define pthread_mutex_lock(...) do { \
-    fprintf(stderr, "LOCK\n"); \
-    pthread_mutex_lock(__VA_ARGS__); \
-  } while(0)
-#define pthread_mutex_unlock(...) do { \
-    fprintf(stderr, "UNLOCK\n"); \
-    pthread_mutex_unlock(__VA_ARGS__); \
-  } while(0)
-#endif
-
 void stateMachine(void);
 void endStatemachine(void);
 void setTransitionDisconnectedConnecting(void);
@@ -32,7 +20,7 @@ void setTransitionConnectingOpen(short val);
 void setTransitionOpenClosing(void);
 void setTransitionClosingClosed(void);
 
-int main(int argc, char *argv[]) {
+int main() {
   int i;
   stateMachine();
   fprintf(stderr, "main sleeps ...\n");
@@ -107,13 +95,12 @@ void setTransitionDisconnectedConnecting(void) {
   }
 }
 
-bool checkTransitionDisconnectedConnecting(void) {
+static void waitForTransitionDisconnectedConnecting(void) {
   pthread_mutex_lock(&mtxDisconnectedConnecting);
   while (!transitionDisconnectedConnecting)
     pthread_cond_wait(&condDisconnectedConnecting, &mtxDisconnectedConnecting);
   transitionDisconnectedConnecting = false;
   pthread_mutex_unlock(&mtxDisconnectedConnecting);
-  return true;
 }
 /*****************************************************************************/
 
@@ -136,7 +123,7 @@ void setTransitionConnectingOpen(short val) {
   }
 }
 
-bool checkTransitionConnectingOpen(void) {
+static bool checkTransitionConnectingOpen(void) {
   bool transition = false;
   pthread_mutex_lock(&mtxConnectingOpen);
   while (transitionConnectingOpen == 0)
@@ -167,13 +154,12 @@ void setTransitionOpenClosing(void) {
   }
 }
 
-bool checkTransitionOpenClosing(void) {
+static void waitForTransitionOpenClosing(void) {
   pthread_mutex_lock(&mtxOpenClosing);
   while (!transitionOpenClosing)
     pthread_cond_wait(&condOpenClosing, &mtxOpenClosing);
   transitionOpenClosing = false;
   pthread_mutex_unlock(&mtxOpenClosing);
-  return true;
 }
 /*****************************************************************************/
 
@@ -195,24 +181,24 @@ void setTransitionClosingClosed(void) {
   }
 }
 
-bool checkTransitionClosingClosed(void) {
+static void waitForTransitionClosingClosed(void) {
   pthread_mutex_lock(&mtxClosingClosed);
   while (!transitionClosingClosed)
     pthread_cond_wait(&condClosingClosed, &mtxClosingClosed);
   transitionClosingClosed = false;
   pthread_mutex_unlock(&mtxClosingClosed);
-  return true;
 }
 /*****************************************************************************/
 
 void *statemachineTask(void *argv) {
+  (void) argv;
   for (;;) {
     pthread_mutex_lock(&mtxCurrentState);
     switch (currentState) {
     case disconnected:
       pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "disconnected\n");
-      checkTransitionDisconnectedConnecting();
+      waitForTransitionDisconnectedConnecting();
       pthread_mutex_lock(&mtxCurrentState);
       currentState = connecting;
       pthread_mutex_unlock(&mtxCurrentState);
@@ -234,7 +220,7 @@ void *statemachineTask(void *argv) {
     case open:
       pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "open\n");
-      checkTransitionOpenClosing();
+      waitForTransitionOpenClosing();
       pthread_mutex_lock(&mtxCurrentState);
       currentState = closing;
       pthread_mutex_unlock(&mtxCurrentState);
@@ -242,7 +228,7 @@ void *statemachineTask(void *argv) {
     case closing:
       pthread_mutex_unlock(&mtxCurrentState);
       fprintf(stderr, "closing\n");
-      checkTransitionClosingClosed();
+      waitForTransitionClosingClosed();
       pthread_mutex_lock(&mtxCurrentState);
       currentState = closed;
       pthread_mutex_unlock(&mtxCurrentState);
