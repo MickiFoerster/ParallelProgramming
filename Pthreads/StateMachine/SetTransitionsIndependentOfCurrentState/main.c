@@ -20,7 +20,7 @@ void setTransitionConnectingOpen(short val);
 void setTransitionOpenClosing(void);
 void setTransitionClosingClosed(void);
 
-int main(int argc, char *argv[]) {
+int main() {
   int i;
   stateMachine();
   fprintf(stderr, "main sleeps ...\n");
@@ -79,13 +79,12 @@ void setTransitionDisconnectedConnecting(void) {
   pthread_cond_signal(&condDisconnectedConnecting);
 }
 
-static bool checkTransitionDisconnectedConnecting(void) {
+static void waitForTransitionDisconnectedConnecting(void) {
   pthread_mutex_lock(&mtxDisconnectedConnecting);
   while (!transitionDisconnectedConnecting)
     pthread_cond_wait(&condDisconnectedConnecting, &mtxDisconnectedConnecting);
   transitionDisconnectedConnecting = false;
   pthread_mutex_unlock(&mtxDisconnectedConnecting);
-  return true;
 }
 /*****************************************************************************/
 
@@ -127,13 +126,12 @@ void setTransitionOpenClosing(void) {
   pthread_cond_signal(&condOpenClosing);
 }
 
-static bool checkTransitionOpenClosing(void) {
+static void waitForTransitionOpenClosing(void) {
   pthread_mutex_lock(&mtxOpenClosing);
   while (!transitionOpenClosing)
     pthread_cond_wait(&condOpenClosing, &mtxOpenClosing);
   transitionOpenClosing = false;
   pthread_mutex_unlock(&mtxOpenClosing);
-  return true;
 }
 /*****************************************************************************/
 
@@ -149,18 +147,18 @@ void setTransitionClosingClosed(void) {
   pthread_cond_signal(&condClosingClosed);
 }
 
-static bool checkTransitionClosingClosed(void) {
+static void waitForTransitionClosingClosed(void) {
   pthread_mutex_lock(&mtxClosingClosed);
   while (!transitionClosingClosed)
     pthread_cond_wait(&condClosingClosed, &mtxClosingClosed);
   transitionClosingClosed = false;
   pthread_mutex_unlock(&mtxClosingClosed);
-  return true;
 }
 /*****************************************************************************/
 
 
 static void *statemachineTask(void *argv) {
+  (void) argv;
   typedef enum {
     disconnected = 0x100,
     connecting,
@@ -174,7 +172,7 @@ static void *statemachineTask(void *argv) {
     switch (currentState) {
     case disconnected:
       fprintf(stderr, "disconnected\n");
-      checkTransitionDisconnectedConnecting();
+      waitForTransitionDisconnectedConnecting();
       currentState = connecting;
       break;
     case connecting:
@@ -186,12 +184,12 @@ static void *statemachineTask(void *argv) {
       break;
     case open:
       fprintf(stderr, "open\n");
-      checkTransitionOpenClosing();
+      waitForTransitionOpenClosing();
       currentState = closing;
       break;
     case closing:
       fprintf(stderr, "closing\n");
-      checkTransitionClosingClosed();
+      waitForTransitionClosingClosed();
       currentState = closed;
       break;
     case closed:
