@@ -79,7 +79,7 @@ void setTransitionDisconnectedConnecting(void) {
   pthread_cond_signal(&condDisconnectedConnecting);
 }
 
-bool checkTransitionDisconnectedConnecting(void) {
+static bool checkTransitionDisconnectedConnecting(void) {
   pthread_mutex_lock(&mtxDisconnectedConnecting);
   while (!transitionDisconnectedConnecting)
     pthread_cond_wait(&condDisconnectedConnecting, &mtxDisconnectedConnecting);
@@ -102,7 +102,7 @@ void setTransitionConnectingOpen(short val) {
   pthread_cond_signal(&condConnectingOpen);
 }
 
-bool checkTransitionConnectingOpen(void) {
+static bool checkTransitionConnectingOpen(void) {
   bool transition = false;
   pthread_mutex_lock(&mtxConnectingOpen);
   while (transitionConnectingOpen == 0)
@@ -127,7 +127,7 @@ void setTransitionOpenClosing(void) {
   pthread_cond_signal(&condOpenClosing);
 }
 
-bool checkTransitionOpenClosing(void) {
+static bool checkTransitionOpenClosing(void) {
   pthread_mutex_lock(&mtxOpenClosing);
   while (!transitionOpenClosing)
     pthread_cond_wait(&condOpenClosing, &mtxOpenClosing);
@@ -149,7 +149,7 @@ void setTransitionClosingClosed(void) {
   pthread_cond_signal(&condClosingClosed);
 }
 
-bool checkTransitionClosingClosed(void) {
+static bool checkTransitionClosingClosed(void) {
   pthread_mutex_lock(&mtxClosingClosed);
   while (!transitionClosingClosed)
     pthread_cond_wait(&condClosingClosed, &mtxClosingClosed);
@@ -160,7 +160,7 @@ bool checkTransitionClosingClosed(void) {
 /*****************************************************************************/
 
 
-void *statemachineTask(void *argv) {
+static void *statemachineTask(void *argv) {
   typedef enum {
     disconnected = 0x100,
     connecting,
