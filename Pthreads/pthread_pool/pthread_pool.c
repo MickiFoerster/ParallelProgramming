@@ -1,11 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#include "pthread_pool.h"
+
 #include <assert.h>
 #include <pthread.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "debug_print.h"
-#include "pthread_pool.h"
 #include "queue.h"
 
 typedef struct {
@@ -88,6 +89,8 @@ void pthread_pool_insert_task(void* pool, void (*task)(void* arg), void* arg) {
 void pthread_pool_wait_until_all_tasks_are_done(void* pool) {
   pthread_pool_t* p = (pthread_pool_t*) pool;
   queue_finish(p->task_queue);
+  fprintf(stderr, "Join with all working threads\n");
+  for (int i = 0; i < POOL_MAX_SIZE; ++i) pthread_join(p->threads[i], NULL);
 }
 
 static void* worker(void* arg) {

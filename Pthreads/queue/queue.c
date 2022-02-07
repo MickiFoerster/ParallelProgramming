@@ -7,23 +7,10 @@
 #include <time.h>
 #include <pthread.h>
 
+#include "debug_print.h"
 #include "queue.h"
 
 size_t QUEUE_MAX_SIZE = 64;
-
-#ifdef DEBUG
-  #ifndef DEBUG_PRINT
-    #define DEBUG_PRINT
-    void debug_print(const char* format, ...) {
-      va_list args;
-      va_start(args, format);
-      vfprintf(stderr, format, args);
-      va_end(args);
-    }
-  #endif
-#else
-  #define debug_print(...) 
-#endif
 
 // Element data type
 typedef struct {
